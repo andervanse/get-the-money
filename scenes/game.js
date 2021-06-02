@@ -79,7 +79,7 @@ var Game = new Phaser.Class({
             callback: this.onDropMoneyEvent, 
             callbackScope: this, 
             repeat: 3, 
-            loop: true
+            loop: true  
         });
     }, 
 
