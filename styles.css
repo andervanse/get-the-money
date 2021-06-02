@@ -1,0 +1,16 @@
+body {
+    margin: 0;
+}
+
+.title {
+    font-size: 36px;
+    padding: 15px;
+    font-weight: bold;
+    font-family: 'Courier New', Courier, monospace;
+    text-align: center;
+}
+
+#div-game {
+    padding: 15px;
+    text-align: center;
+}
