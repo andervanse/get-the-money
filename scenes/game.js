@@ -1,70 +1,73 @@
 var Game = new Phaser.Class({
 
     items: [ 
-        { name: 'clock', points: 0 },
-        { name: 'one', points: 1 },
-        { name: 'five', points: 5 },
-        { name: 'ten', points: 10 },
-        { name: 'fifty', points: 50 }, 
-        { name: 'one_hundred', points: 100 }
+        { name: 'clock', points: 5 },
+        { name: 'bomb-5', points: -5 },
+        { name: 'bomb-10', points: -10 },
+        { name: 'one_bill', points: 1 },
+        { name: 'five_bill', points: 5 },
+        { name: 'ten_bill', points: 10 },
+        { name: 'fifty_bill', points: 50 }, 
+        { name: 'one_hundred_bill', points: 100 }
     ],
     Extends: Phaser.Scene,
-    gameState: { score: 0 },
     initialize: function Game() {
         Phaser.Scene.call(this, { key: 'game' });
     },
-
+    gameState: { score: null },
     difficulty: {
         easy: {
             velocity: 300,
-            gravity: 300
+            gravity: 200
         },
         normal: {
             velocity: 400,
-            gravity: 350,
+            gravity: 300,
         },
         hard: {
-            velocity: 450,
-            gravity: 400
+            velocity: 600,
+            gravity: 500
         }
     },
-
-    durationInSeconds: 15,
-
+    durationInSeconds: null,
+    middleX: null,
+    middleY: null,
     create: function() {
         this.durationInSeconds = 15;
-        this.scene.stop('menu');
-        this.gameState.scoreText = this.add.text(10, 30, 'Score: 0', { font: '16px Courier', fill: 0x000099, fontWeight: 'bold' });
-        this.gameState.countdown = this.add.text(10, 55, 'Time: ' + this.durationInSeconds, { font: '16px Courier', fill: 0x000099, fontWeight: 'bold' });
+        this.gameState.score = 0;
+        this.middleX = this.game.config.width/2.0;
+        this.middleY = this.game.config.height/2.0;
+        this.add.image(this.middleX, this.middleY, 'background');
 
-        this.gameState.ground = this.physics.add.staticImage(0, this.game.config.height, 'ground');
-        this.gameState.ground2 = this.physics.add.staticImage(360, this.game.config.height, 'ground');
-        this.gameState.ground3 = this.physics.add.staticImage(600, this.game.config.height, 'ground');
-        this.gameState.ground.setImmovable(true);
-        this.gameState.ground2.setImmovable(true);
-        this.gameState.ground3.setImmovable(true);
+        this.scene.stop('menu');
+        this.gameState.countdown = this.add.text(10, 30, 'Time: ' + this.durationInSeconds, { font: '28px Courier bold', fill: 0x000099 });
+        this.gameState.scoreText = this.add.text(10, 65, 'Score: 0', { font: '18px Courier bold', fill: 0x000099 });
+        const score = localStorage.getItem('score');
+        this.add.text(10, 85, 'Best score: ' + score, { font: '18px Courier bold', fill: 0x000099 });
         
-        this.gameState.bucket = this.physics.add.sprite(this.game.config.width/2, this.game.config.height - 40, 'bucket');
+        this.gameState.ground = this.add.rectangle(0, this.game.config.height, this.game.config.width*2, 10, 0Xfcba03).setAlpha(0.8);
+        this.physics.add.existing(this.gameState.ground);
+        this.gameState.ground.body.setImmovable(true);
+        
+        this.gameState.bucket = this.physics.add.sprite(this.middleX, this.game.config.height - 30, 'bucket');
         this.gameState.bucket.setScale(1.2);
         this.gameState.bucket.setCollideWorldBounds(true);
 
-        this.gameState.enter = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
         this.gameState.cursors = this.input.keyboard.createCursorKeys();
+        this.gameState.spaceBar = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+        this.gameState.keyA = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
+        this.gameState.keyD = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
+
         this.gameState.money = this.physics.add.group();
 
         this.physics.add.collider(this.gameState.bucket, this.gameState.money, this.onHitItem, null, this);               
         this.physics.add.collider(this.gameState.money, this.gameState.ground, this.onMoneyHitGround, null, this);
-        this.physics.add.collider(this.gameState.money, this.gameState.ground2, this.onMoneyHitGround, null, this);
-        this.physics.add.collider(this.gameState.money, this.gameState.ground3, this.onMoneyHitGround, null, this);
-
         this.physics.add.collider(this.gameState.bucket, this.gameState.ground, null, null, this);
-        this.physics.add.collider(this.gameState.bucket, this.gameState.ground2, null, null, this);
-        this.physics.add.collider(this.gameState.bucket, this.gameState.ground3, null, null, this);
 
         this.time.addEvent({ 
             delay: 1000, 
             callback: function() { 
-                if (this.durationInSeconds >= 0) {
+                if (this.durationInSeconds > 0) {
                    this.durationInSeconds--; 
                    this.gameState.countdown.setText('Time: ' + this.durationInSeconds);
                 }
@@ -75,88 +78,104 @@ var Game = new Phaser.Class({
         });  
 
         this.gameState.timedEvent = this.time.addEvent({ 
-            delay: 1000, 
-            callback: this.onDropMoneyEvent, 
+            delay: 800, 
+            callback: this.onDropItemEvent, 
             callbackScope: this, 
-            repeat: 3, 
+            repeat: 4, 
             loop: true  
         });
+    
     }, 
 
-    onDropMoneyEvent: function() {
+    onDropItemEvent: function() {
         let item = this.items[Phaser.Math.Between(0, this.items.length-1)];
         let itemName = item.name;
-
-        if (itemName !== 'clock') {
-            itemName = item.name + '_bill';
-        }
-
         var droppingItem = this.gameState.money.create(Phaser.Math.Between(30, this.game.config.width - 30), 5, itemName );
         droppingItem.points = item.points;
         droppingItem.name = item.name;
+        droppingItem.body.gravity.x = Phaser.Math.Between(-120, 120);
+        droppingItem.setInteractive();
+        droppingItem.setBounce(0.3);
+        droppingItem.setScale(1.3);
+        droppingItem.setCollideWorldBounds(true);        
 
         if (this.gameState.score < 400) {
             droppingItem.body.gravity.y = this.difficulty.easy.gravity;
             droppingItem.body.velocity.y = this.difficulty.easy.velocity;
-            console.log('gravity:', droppingItem.body.gravity, 'velocity:', droppingItem.body.velocity);
         } else if (this.gameState.score > 400) {
             droppingItem.body.gravity.y = this.difficulty.normal.gravity;
             droppingItem.body.velocity.y = this.difficulty.normal.velocity;
-            console.log('gravity:', droppingItem.body.gravity, 'velocity:', droppingItem.body.velocity);
         } else if (this.gameState.score > 1000) {
             droppingItem.body.gravity.y = this.difficulty.hard.gravity;
             droppingItem.body.velocity.y = this.difficulty.hard.velocity;
-            console.log('gravity:', droppingItem.body.gravity, 'velocity:', droppingItem.body.velocity);
         }
-
-        droppingItem.setInteractive();
-        droppingItem.setBounce(0.5);
-        droppingItem.setScale(1.3);
-        droppingItem.setCollideWorldBounds(true);
-        droppingItem.setVelocity(Phaser.Math.Between(-100, 400), 20);        
     },
 
     onHitItem: function(bucket, item) {
 
         if (item.name === 'clock') {
-            this.durationInSeconds += 5;  
+            this.durationInSeconds += item.points; 
             this.gameState.countdown.setText('Time: ' + this.durationInSeconds);          
+        } else if (item.name.indexOf('bomb') >= 0) {
+            this.durationInSeconds += item.points; 
+            this.gameState.countdown.setText('Time: ' + this.durationInSeconds);          
+        } else {
+            this.gameState.score += item.points;
+            this.gameState.scoreText.setText('Score: ' + this.gameState.score);
         }
-
-        this.gameState.score += item.points;
-        this.gameState.scoreText.setText('Score: ' + this.gameState.score);
-        item.destroy();
+        item.destroy();        
     },
 
-    onMoneyHitGround: function(money, ground) {
-        ground.destroy();
+    onMoneyHitGround: function(ground, money) {
+        money.destroy();        
     },
 
     update: function() {
 
-        if (this.gameState.cursors.left.isDown) {
-           this.gameState.bucket.x -= 5;
+        if (this.gameState.cursors.left.isDown | this.gameState.keyA.isDown) {
+            this.gameState.bucket.rotation = -0.12;
+            this.gameState.bucket.x -= 7;
         }
 
-        if (this.gameState.cursors.right.isDown) {
-           this.gameState.bucket.x += 5;
+        if (this.gameState.cursors.right.isDown | this.gameState.keyD.isDown) {
+            this.gameState.bucket.rotation = 0.12;
+            this.gameState.bucket.x += 7;
         }
 
-        if (this.durationInSeconds == 0) {
+        if (this.gameState.cursors.left.isUp 
+            && this.gameState.cursors.right.isUp
+            && this.gameState.keyA.isUp
+            && this.gameState.keyD.isUp) {
+            this.gameState.bucket.rotation = 0.00;
+        }
+
+        if (Phaser.Input.Keyboard.JustDown(this.gameState.spaceBar)) { 
+            console.log('space pause');           
+            this.scene.launch('pause');
+            this.scene.pause();
+        }
+
+        if (this.durationInSeconds <= 0) {
 
             this.gameState.money.getChildren().forEach(function(m) {
                 m.destroy();
             });
 
-            this.physics.pause();            
-            this.add.text(this.game.config.width/2, this.game.config.height/2, 'GAME OVER', { font: '42px Courier', fill: 0x000099, fontWeight: 'bold' })
+            this.physics.pause();
+            this.add.text(this.middleX, this.middleY, 'GAME OVER', { font: '46px Courier', fill: 0x000099 })
                     .setOrigin(0.5, 1);
 
+            const score = localStorage.getItem('score');
+
+            if ((score && this.gameState.score > score) || !score) {
+                localStorage.setItem('score', this.gameState.score);
+            }
+
             this.time.addEvent({ 
-                delay: 1000, 
+                delay: 800, 
                 callback: function() { 
-                    this.scene.start('start');
-                    this.scene.stop();             
+                    this.scene.stop();
+                    this.scene.start('start');                    
                 }, 
                 callbackScope: this, 
                 repeat: 0, 
