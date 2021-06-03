@@ -25,7 +25,7 @@ var Game = new Phaser.Class({
             gravity: 300,
         },
         hard: {
-            velocity: 600,
+            velocity: 650,
             gravity: 500
         }
     },
@@ -40,12 +40,12 @@ var Game = new Phaser.Class({
         this.add.image(this.middleX, this.middleY, 'background');
 
         this.scene.stop('menu');
-        this.gameState.countdown = this.add.text(10, 30, 'Time: ' + this.durationInSeconds, { font: '28px Courier bold', fill: 0x000099 });
-        this.gameState.scoreText = this.add.text(10, 65, 'Score: 0', { font: '18px Courier bold', fill: 0x000099 });
+        this.gameState.countdown = this.add.text(6, 5, 'Time: ' + this.durationInSeconds, { font: '28px Courier bold', fill: 0x000099 });
+        this.gameState.scoreText = this.add.text(140, 5, 'Score: 0', { font: '28px Courier bold', fill: 0x000099 });
         const score = localStorage.getItem('score');
 
         if (score) {
-            this.add.text(10, 85, 'Best score: ' + score, { font: '18px Courier bold', fill: 0x000099 });
+            this.add.text(6, 45, 'Best score: ' + score, { font: '22px Courier bold', fill: 0x000099 });
         }
         
         this.gameState.ground = this.add.rectangle(0, this.game.config.height, this.game.config.width*2, 10, 0Xfcba03).setAlpha(0.8);
@@ -82,7 +82,7 @@ var Game = new Phaser.Class({
         });  
 
         this.gameState.timedEvent = this.time.addEvent({ 
-            delay: 800, 
+            delay: 500, 
             callback: this.onDropItemEvent, 
             callbackScope: this, 
             repeat: 4, 
@@ -93,23 +93,29 @@ var Game = new Phaser.Class({
 
     onDropItemEvent: function() {
         let item = this.items[Phaser.Math.Between(0, this.items.length-1)];
-        let itemName = item.name;
-        var droppingItem = this.gameState.money.create(Phaser.Math.Between(30, this.game.config.width - 30), 5, itemName );
+        var droppingItem = this.gameState.money.create(Phaser.Math.Between(30, this.game.config.width - 30), 8, item.name);
         droppingItem.points = item.points;
         droppingItem.name = item.name;
-        droppingItem.body.gravity.x = Phaser.Math.Between(-120, 120);
+        droppingItem.body.setGravityX(Phaser.Math.Between(-200, 200));
         droppingItem.setInteractive();
-        droppingItem.setBounce(0.3);
-        droppingItem.setScale(1.3);
+
+        droppingItem.setBounce(0.8);
+
+        if (droppingItem.name.indexOf('bomb') >= 0) {
+           droppingItem.setScale(1.6); 
+        } else {
+           droppingItem.setScale(1.1);
+        }
+
         droppingItem.setCollideWorldBounds(true);        
 
-        if (this.gameState.score < 400) {
+        if (this.gameState.score <= 400) {
             droppingItem.body.gravity.y = this.difficulty.easy.gravity;
             droppingItem.body.velocity.y = this.difficulty.easy.velocity;
         } else if (this.gameState.score > 400) {
             droppingItem.body.gravity.y = this.difficulty.normal.gravity;
             droppingItem.body.velocity.y = this.difficulty.normal.velocity;
-        } else if (this.gameState.score > 1000) {
+        } else if (this.gameState.score > 700) {
             droppingItem.body.gravity.y = this.difficulty.hard.gravity;
             droppingItem.body.velocity.y = this.difficulty.hard.velocity;
         }
