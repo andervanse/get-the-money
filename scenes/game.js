@@ -43,7 +43,10 @@ var Game = new Phaser.Class({
         this.gameState.countdown = this.add.text(10, 30, 'Time: ' + this.durationInSeconds, { font: '28px Courier bold', fill: 0x000099 });
         this.gameState.scoreText = this.add.text(10, 65, 'Score: 0', { font: '18px Courier bold', fill: 0x000099 });
         const score = localStorage.getItem('score');
-        this.add.text(10, 85, 'Best score: ' + score, { font: '18px Courier bold', fill: 0x000099 });
+
+        if (score) {
+            this.add.text(10, 85, 'Best score: ' + score, { font: '18px Courier bold', fill: 0x000099 });
+        }
         
         this.gameState.ground = this.add.rectangle(0, this.game.config.height, this.game.config.width*2, 10, 0Xfcba03).setAlpha(0.8);
         this.physics.add.existing(this.gameState.ground);
@@ -57,7 +60,8 @@ var Game = new Phaser.Class({
         this.gameState.spaceBar = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
         this.gameState.keyA = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
         this.gameState.keyD = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
-
+        this.gameState.pointer = this.game.input.activePointer;
+        this.game.input.mouse.capture = true;
         this.gameState.money = this.physics.add.group();
 
         this.physics.add.collider(this.gameState.bucket, this.gameState.money, this.onHitItem, null, this);               
@@ -132,12 +136,17 @@ var Game = new Phaser.Class({
 
     update: function() {
 
-        if (this.gameState.cursors.left.isDown | this.gameState.keyA.isDown) {
+        const leftClicked = (this.gameState.pointer.isDown && this.gameState.pointer.x <= this.gameState.bucket.x);
+        const rightClicked = (this.gameState.pointer.isDown && this.gameState.pointer.x >= this.gameState.bucket.x);
+
+        if (leftClicked || 
+             this.gameState.cursors.left.isDown | this.gameState.keyA.isDown) {
             this.gameState.bucket.rotation = -0.12;
             this.gameState.bucket.x -= 7;
         }
 
-        if (this.gameState.cursors.right.isDown | this.gameState.keyD.isDown) {
+        if (rightClicked || 
+             this.gameState.cursors.right.isDown | this.gameState.keyD.isDown) {
             this.gameState.bucket.rotation = 0.12;
             this.gameState.bucket.x += 7;
         }
@@ -145,7 +154,8 @@ var Game = new Phaser.Class({
         if (this.gameState.cursors.left.isUp 
             && this.gameState.cursors.right.isUp
             && this.gameState.keyA.isUp
-            && this.gameState.keyD.isUp) {
+            && this.gameState.keyD.isUp
+            && this.gameState.pointer.isUp) {
             this.gameState.bucket.rotation = 0.00;
         }
 
