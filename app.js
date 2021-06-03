@@ -3,13 +3,22 @@ import Start from './scenes/start.js';
 import Game from './scenes/game.js';
 import Pause from './scenes/pause.js';
 
-var width = window.innerWidth * window.devicePixelRatio -40;
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+        navigator.serviceWorker.register('sw.js');
+    });
+}
+
+//var width = window.innerWidth * window.devicePixelRatio -40;
+//var height = window.innerHeight * window.devicePixelRatio -40;
+
+ var width = window.innerWidth;
+ var height = window.innerHeight;
 
  if (width > 800) {
      width = 800;
  }
-
- var height = window.innerHeight * window.devicePixelRatio -40;
 
  if (height > 600) {
     height = 600;
